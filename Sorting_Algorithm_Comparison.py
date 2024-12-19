@@ -1,10 +1,10 @@
 import random
 import sys
 import time
-import numpy as np
+import numpy as np #pip install numpy
 import math
-import os
 import matplotlib.pyplot as graph_lib #pip install matplotlib
+from terminaltables import AsciiTable #pip install terminaltables
 
 memory_error_reached = False
 two_minutes_reached = False
@@ -94,8 +94,6 @@ def python_sort(array):
 
 def store_array_in_a_file(size: int, preferred_file_name: str=None):
     global memory_error_reached
-    if not os.path.exists('generated_arrays'):
-        os.makedirs('generated_arrays')
     try:
         unsorted_array = generate_filled_array(size)
         if(preferred_file_name == None):
@@ -172,14 +170,14 @@ def measure_sorting_algorithm(algorithm_functions: list, from_n: int, to_n: int 
                     elapsed_time.append(measure_sorting_speed(functions, array)) 
                     progress_bar(progress, total_iterations, prefix="Progress:", suffix="Complete", length=50)
                     progress += 1
-
+                
                 total_time = 0
                 for i in elapsed_time:
                     total_time = total_time + i
                 list_of_measured_times.append({
                         "algorithm": functions.__name__,
-                        "time intervals (ms)": elapsed_time,
-                        "average time (ms)": (total_time / len(elapsed_time)),
+                        "time intervals (s)": [f"{x:.3f}" for x in elapsed_time],
+                        "average time (s)": round(total_time / len(elapsed_time), 6),
                         "size": len(array)
                 })
                 elapsed_time.clear()
@@ -202,8 +200,8 @@ def display_algorithm_data_in_a_graph(algorithm_data: list):
         self_made_x = []
         self_made_y = []
         for measurement in all_self_made_results:
-            self_made_x.append(measurement["average time (ms)"])
-            self_made_y.append(f'10^{int(math.log10(measurement["size"]))}')
+            self_made_x.append(f'10^{int(math.log10(measurement["size"]))}')
+            self_made_y.append(measurement["average time (s)"])
 
         graph_lib.plot(self_made_x, self_made_y, label='Self Made')
 
@@ -211,31 +209,31 @@ def display_algorithm_data_in_a_graph(algorithm_data: list):
         quick_sort_x = []
         quick_sort_y = []
         for measurement in all_quick_sort_results:
-            quick_sort_x.append(measurement["average time (ms)"])
-            quick_sort_y.append(f'10^{int(math.log10(measurement["size"]))}')
+            quick_sort_x.append(f'10^{int(math.log10(measurement["size"]))}')
+            quick_sort_y.append(measurement["average time (s)"])
         graph_lib.plot(quick_sort_x, quick_sort_y, label='Quick Sort')
 
     if(len(all_python_sort_results) > 0):
         python_sort_x = []
         python_sort_y = []
         for measurement in all_python_sort_results:
-            python_sort_x.append(measurement["average time (ms)"])
-            python_sort_y.append(f'10^{int(math.log10(measurement["size"]))}')
+            python_sort_x.append(f'10^{int(math.log10(measurement["size"]))}')
+            python_sort_y.append(measurement["average time (s)"])
         graph_lib.plot(python_sort_x, python_sort_y, label='Python Sort')
 
     if(len(all_python_sort_results) > 0 or len(all_quick_sort_results) > 0 or len(all_quick_sort_results) > 0):
         graph_lib.title("Algorithm Measurement Graph")
-        graph_lib.xlabel("Average Time (s)")
-        graph_lib.ylabel("Size")
+        graph_lib.xlabel("Size")
+        graph_lib.ylabel("Average Time (s)")
         graph_lib.legend()
         graph_lib.show()
     else:
         print("Something went wrong no sorting results were given!")
 
 config = {
-    "Sorting Functions: ": [self_made, python_sort, quick_sort],
+    "Sorting Functions: ": [python_sort, quick_sort],
     "From 10^: ": 2,
-    "To 10^: ": 4,
+    "To 10^: ": 8,
     "Range: ": True,
     "Custom File Name: ": None
 }
@@ -351,7 +349,7 @@ Custom array file name: {config["Custom File Name: "]}"""
             if(int(user_input) == 0):
                 user_done = True
             else:
-                config["From 10^: "] = int(user_input)
+                config["To 10^: "] = int(user_input)
 
         elif(int(user_input) == 3):
             pretty_output("You've choosen to change configs To 10^ value (note this value must be more than From 10^ value)", print_ending= False)
@@ -385,5 +383,29 @@ Custom array file name: {config["Custom File Name: "]}"""
             if(user_input.lower() != "none"):
                 config["Custom File Name: "] = user_input
 
-display_algorithm_data_in_a_graph(algorithm_data= measure_sorting_algorithm(algorithm_functions= config["Sorting Functions: "], from_n= config["From 10^: "],
-                                  to_n= config["To 10^: "], range_given= config["Range: "], custom_file_name= config["Custom File Name: "]))
+
+algorithm_data = measure_sorting_algorithm(algorithm_functions= config["Sorting Functions: "], from_n= config["From 10^: "],
+                                  to_n= config["To 10^: "], range_given= config["Range: "], custom_file_name= config["Custom File Name: "])
+
+table_data = [
+    ["Sorting function", "array size", "time intervals (s)", "average time (s)"],     
+]
+
+for instance in algorithm_data:
+    row = [
+        instance["algorithm"],
+        instance["size"],
+        instance["time intervals (s)"],
+        instance['average time (s)']
+    ]
+    table_data.append(row)
+
+print()
+table = AsciiTable(table_data)
+print(table.table)
+
+display_algorithm_data_in_a_graph(algorithm_data= algorithm_data)
+
+#dependencies: #pip install terminaltables
+               #pip install matplotlib
+               #pip install numpy
