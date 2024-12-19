@@ -3,6 +3,7 @@ import sys
 import time
 import numpy as np #pip install numpy
 import math
+import os
 import matplotlib.pyplot as graph_lib #pip install matplotlib
 from terminaltables import AsciiTable #pip install terminaltables
 
@@ -94,6 +95,8 @@ def python_sort(array):
 
 def store_array_in_a_file(size: int, preferred_file_name: str=None):
     global memory_error_reached
+    if not os.path.exists('generated_arrays'):
+        os.makedirs('generated_arrays')
     try:
         unsorted_array = generate_filled_array(size)
         if(preferred_file_name == None):
@@ -113,7 +116,7 @@ def measure_sorting_speed(function: callable, array: list) -> float:
 
         measured_time = (time.time() - start_time)
         if(measured_time > 120):
-            two_minutes_reached == True
+            two_minutes_reached = True
         return measured_time
     except MemoryError as err:
         memory_error_reached = True
@@ -163,6 +166,14 @@ def measure_sorting_algorithm(algorithm_functions: list, from_n: int, to_n: int 
                     array = unsorted_array.copy()
                     if(two_minutes_reached and x >= 2 or memory_error_reached):
                         print()
+                        list_of_measured_times.append({
+                        "algorithm": functions.__name__,
+                        "time intervals (s)": 0,
+                        "average time (s)": 0,
+                        "size": len(array),
+                        "caused memory error": True
+                        })
+                        elapsed_time.append(0)
                         print(f"The algorithm got cut short: Memory error reached({memory_error_reached}), two minutes passed({two_minutes_reached})")
                         stop_current_algo = True
                         break
@@ -170,16 +181,18 @@ def measure_sorting_algorithm(algorithm_functions: list, from_n: int, to_n: int 
                     elapsed_time.append(measure_sorting_speed(functions, array)) 
                     progress_bar(progress, total_iterations, prefix="Progress:", suffix="Complete", length=50)
                     progress += 1
+                if(memory_error_reached == False):
+                    total_time = 0
+                    for i in elapsed_time:
+                        total_time = total_time + i
+                    list_of_measured_times.append({
+                            "algorithm": functions.__name__,
+                            "time intervals (s)": [f"{x:.3f}" for x in elapsed_time],
+                            "average time (s)": round(total_time / len(elapsed_time), 6),
+                            "size": len(array),
+                            "caused memory error": False
+                    })
                 
-                total_time = 0
-                for i in elapsed_time:
-                    total_time = total_time + i
-                list_of_measured_times.append({
-                        "algorithm": functions.__name__,
-                        "time intervals (s)": [f"{x:.3f}" for x in elapsed_time],
-                        "average time (s)": round(total_time / len(elapsed_time), 6),
-                        "size": len(array)
-                })
                 elapsed_time.clear()
 
     return list_of_measured_times
@@ -349,7 +362,7 @@ Custom array file name: {config["Custom File Name: "]}"""
             if(int(user_input) == 0):
                 user_done = True
             else:
-                config["To 10^: "] = int(user_input)
+                config["From 10^: "] = int(user_input)
 
         elif(int(user_input) == 3):
             pretty_output("You've choosen to change configs To 10^ value (note this value must be more than From 10^ value)", print_ending= False)
@@ -388,7 +401,7 @@ algorithm_data = measure_sorting_algorithm(algorithm_functions= config["Sorting 
                                   to_n= config["To 10^: "], range_given= config["Range: "], custom_file_name= config["Custom File Name: "])
 
 table_data = [
-    ["Sorting function", "array size", "time intervals (s)", "average time (s)"],     
+    ["Sorting function", "Array size", "Time intervals (s)", "Average time (s)", "Memory error"],     
 ]
 
 for instance in algorithm_data:
@@ -396,7 +409,8 @@ for instance in algorithm_data:
         instance["algorithm"],
         instance["size"],
         instance["time intervals (s)"],
-        instance['average time (s)']
+        instance['average time (s)'],
+        instance['caused memory error']
     ]
     table_data.append(row)
 
@@ -404,6 +418,7 @@ print()
 table = AsciiTable(table_data)
 print(table.table)
 
+algorithm_data = [data_instance for data_instance in algorithm_data if data_instance.get("caused memory error") == False]
 display_algorithm_data_in_a_graph(algorithm_data= algorithm_data)
 
 #dependencies: #pip install terminaltables
